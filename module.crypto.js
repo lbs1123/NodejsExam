@@ -43,6 +43,6 @@ fs.writeFile('password.txt', JSON.stringify(data), 'utf8', function(err) {
 				}else {
 					console.log('data='+data);
 				}
-			});
+		});
 	}
 });
