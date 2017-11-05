@@ -84,7 +84,7 @@ app.post('/user/message',function(req,res) {
 	console.log(req.body.reciever_id);
 	console.log(req.body.message);
 	connection.query(
-		'select id,name from user where id=? or id=?',
+		'select id,name from muser where id=? or id=?',
 		[req.body.sender_id,req.body.reciever_id],
 		function(err, results, fields) {
 			if (err) {
@@ -134,7 +134,7 @@ app.delete('/user/message/:id',function(req,res) {
 });
 
 app.get('/user',function(req,res) {
-	connection.query('select * from user', 
+	connection.query('select * from muser', 
 		function(err,results,fields) {
 			if (err) {
 				res.send(JSON.stringify(err));
@@ -144,7 +144,7 @@ app.get('/user',function(req,res) {
 		});
 });
 app.get('/user/:id',function(req,res){
-	connection.query('select * from user where id=?',
+	connection.query('select * from muser where id=?',
 		[req.params.id], function(err, results, fields) {
 			if (err) {
 				res.send(JSON.stringify(err));
@@ -164,8 +164,8 @@ app.post('/user',function(req,res){
 	var hash = crypto.createHash('sha256').
 		update(password).digest('base64');
 	connection.query(
-		'insert into user(user_id,password,name,age) values(?,?,?,?)',
-		[ req.body.user_id, hash, req.body.name, req.body.age ], 
+		'insert into muser(scourt_id, user_id, name, password) values(?,?,?,?)',
+		[ req.body.scourt_id, req.body.user_id, req.body.name, hash ], 
 		function(err, result) {
 			if (err) {
 				res.send(JSON.stringify(err));
@@ -176,11 +176,12 @@ app.post('/user',function(req,res){
 });
 var jwt = require('json-web-token');
 app.post('/user/login',function(req,res){
+	console.log("!!! login token start");
 	var password = req.body.password;
 	var hash = crypto.createHash('sha256').
 		update(password).digest('base64');
 	connection.query(
-		'select id from user where user_id=? and password=?',
+		'select id from muser where user_id=? and password=?',
 		[ req.body.user_id, hash ], function(err, results, fields){
 			if (err) {
 				res.send(JSON.stringify(err));
@@ -236,8 +237,8 @@ app.post('/user/login',function(req,res){
 });
 app.put('/user/:id',function(req,res){
 	connection.query(
-		'update user set name=?,age=? where id=?',
-		[ req.body.name, req.body.age, req.params.id ],
+		'update muser set scourt_id=?, user_id=?, name=?, password=? where id=?',
+		[ req.body.scourt_id, req.body.user_id, req.body.name,  req.body.password, req.params.id ],
 		function(err, result) {
 			if (err) {
 				res.send(JSON.stringify(err));
@@ -247,7 +248,7 @@ app.put('/user/:id',function(req,res){
 		})
 });
 app.delete('/user/:id',function(req,res){
-	connection.query('delete from user where id=?',
+	connection.query('delete from muser where id=?',
 		[ req.params.id ], function(err, result) {
 			if (err) {
 				res.send(JSON.stringify(err));
@@ -256,6 +257,127 @@ app.delete('/user/:id',function(req,res){
 			}
 		});
 });
+////////////////////////////////////////////
+//가상계좌 발급 부분
+///////////////////////////////////////////
+
+app.post('/account/message',function(req,res) {
+	console.log(req.body.sender_id);
+	console.log(req.body.reciever_id);
+	console.log(req.body.message);
+	connection.query(
+		'select id,bank_cd from account where id=? or id=?',
+		[req.body.sender_id,req.body.reciever_id],
+		function(err, results, fields) {
+			if (err) {
+				res.send(JSON.stringify(err));
+			} else {
+				var sender = {};
+				var reciever = {};
+				for (var i = 0; i < results.length; i++){
+					if (results[i].id == 
+						Number(req.body.sender_id)) {
+						sender = results[i];
+					}
+					if (results[i].id ==
+						Number(req.body.reciever_id)) {
+						reciever = results[i];
+					}
+				}
+				var object = {
+					sender_id:req.body.sender_id,
+					reciever_id:req.body.reciever_id,
+					sender:sender, reciever:reciever,
+					message:req.body.message,
+					created_at:new Date()
+				}
+				var messages = dbObj.collection('messages');
+				messages.save(object, function(err, result){
+					if (err) {
+						res.send(JSON.stringify(err));
+					} else {
+						res.send(JSON.stringify(result));
+					}
+				});
+			}
+		});
+});
+app.delete('/account/message/:id',function(req,res) {
+	var messages = dbObj.collection('messages');
+	messages.remove(
+		{_id:ObjectID.createFromHexString(req.params.id)},
+		function(err, result){
+			if (err) {
+				res.send(JSON.stringify(err));
+			} else {
+				res.send(JSON.stringify(result));
+			}
+		});
+});
+
+app.get('/account',function(req,res) {
+	connection.query('select * from account', 
+		function(err,results,fields) {
+			if (err) {
+				res.send(JSON.stringify(err));
+			} else {
+				res.send(JSON.stringify(results));
+			}
+		});
+});
+app.get('/account/:id',function(req,res){
+	connection.query('select * from account where id=?',
+		[req.params.id], function(err, results, fields) {
+			if (err) {
+				res.send(JSON.stringify(err));
+			} else {
+				if (results.length > 0) {
+					res.send(JSON.stringify(results[0]));
+				} else {
+					res.send(JSON.stringify({}));
+				}
+				
+			}
+		});
+});
+app.put('/account/:bank_cd',function(req,res){
+	console.log("account put message");
+	console.log(req.params.bank_cd);
+	connection.query(
+		'update account set bub_cd=?,name=?,amt=?,kubun=? where bank_cd=? and bub_cd is null',
+		[ req.body.bub_cd, req.body.name, req.body.amt, req.body.kubun, req.params.bank_cd ],
+		function(err, result) {
+			if (err) {
+				res.send(JSON.stringify(err));
+			} else {
+				res.send(JSON.stringify(result));
+			}
+		})
+});
+app.put('/johoi/:id',function(req,res){
+	connection.query(
+		'update account set bub_cd=?,name=?,amt=?,kubun=? where id=?',
+		[ req.body.bub_cd, req.body.name, req.body.amt, req.body.kubun, req.params.id ],
+		function(err, result) {
+			if (err) {
+				res.send(JSON.stringify(err));
+			} else {
+				res.send(JSON.stringify(result));
+			}
+		})
+});
+
+app.delete('/account/:id',function(req,res){
+	connection.query('delete from account where id=?',
+		[ req.params.id ], function(err, result) {
+			if (err) {
+				res.send(JSON.stringify(err));
+			} else {
+				res.send(JSON.stringify(result));
+			}
+		});
+});
+////
 app.listen(52273,function() {
 	console.log('Server running');
 });
