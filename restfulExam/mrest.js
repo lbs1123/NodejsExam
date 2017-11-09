@@ -316,7 +316,7 @@ app.delete('/account/message/:id',function(req,res) {
 });
 
 app.get('/account',function(req,res) {
-	connection.query('select * from account', 
+	connection.query('select * from account where issue_date is not null',
 		function(err,results,fields) {
 			if (err) {
 				res.send(JSON.stringify(err));
@@ -343,9 +343,10 @@ app.get('/account/:id',function(req,res){
 app.put('/account/:bank_cd',function(req,res){
 	console.log("account put message");
 	console.log(req.params.bank_cd);
+	console.log(new Date());
 	connection.query(
-		'update account set bub_cd=?,name=?,amt=?,kubun=? where bank_cd=? and bub_cd is null',
-		[ req.body.bub_cd, req.body.name, req.body.amt, req.body.kubun, req.params.bank_cd ],
+		'update account set bub_cd=?,name=?,amt=?,kubun=? issue_date=? where bank_cd=? and bub_cd is null limit 1',
+		[ req.body.bub_cd, req.body.name, req.body.amt, req.body.kubun, new Date(), req.params.bank_cd ],
 		function(err, result) {
 			if (err) {
 				res.send(JSON.stringify(err));

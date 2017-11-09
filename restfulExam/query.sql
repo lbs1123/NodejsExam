@@ -32,5 +32,8 @@ bank_cd text,
 account text,
 name    text,
 amt     integer,
-kubun   text
+kubun   text,
+issue_date DATETIME,
+sunap_date DATETIME,
+napbu_no text
 );
