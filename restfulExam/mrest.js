@@ -381,7 +381,83 @@ app.delete('/account/:id',function(req,res){
 			}
 		});
 });
-////
+////////////////////////////////////////////
+// 수납관련 조회
+///////////////////////////////////////////
+app.get('/sunap',function(req,res) {
+	connection.query('select * from account where sunap_date is not null',
+		function(err,results,fields) {
+			if (err) {
+				res.send(JSON.stringify(err));
+			} else {
+				res.send(JSON.stringify(results));
+			}
+		});
+});
+
+app.get('/sunap/:id',function(req,res){
+	connection.query('select * from account where id=?',
+		[req.params.id], function(err, results, fields) {
+			if (err) {
+				res.send(JSON.stringify(err));
+			} else {
+				if (results.length > 0) {
+					res.send(JSON.stringify(results[0]));
+				} else {
+					res.send(JSON.stringify({}));
+				}
+				
+			}
+		});
+});
+
+app.put('/sunap/:bank_cd',function(req,res){
+	var now = new Date();
+	var jsonDate = now.toJSON();
+	var then     = new Date(jsonDate);
+	console.log("account put message");
+	console.log(req.params.bank_cd);
+	console.log(then);
+	connection.query(
+		'update account set bub_cd=?,name=?,amt=?,kubun=?,issue_date=? where bank_cd=? and bub_cd is null limit 1',
+		[ req.body.bub_cd, req.body.name, req.body.amt, req.body.kubun, then, req.params.bank_cd ],
+		function(err, result) {
+			if (err) {
+				res.send(JSON.stringify(err));
+			} else {
+				res.send(JSON.stringify(result));
+			}
+		})
+});
+
+app.delete('/sunap/:id',function(req,res){
+	connection.query('delete from account where id=?',
+		[ req.params.id ], function(err, result) {
+			if (err) {
+				res.send(JSON.stringify(err));
+			} else {
+				res.send(JSON.stringify(result));
+			}
+		});
+});
+
+app.get('/sunap/:napbu_no',function(req,res){
+	connection.query('select * from account where napbu_no=?',
+		[req.params.napbu_no], function(err, results, fields) {
+			if (err) {
+				res.send(JSON.stringify(err));
+			} else {
+				if (results.length > 0) {
+					res.send(JSON.stringify(results[0]));
+				} else {
+					res.send(JSON.stringify({}));
+				}
+				
+			}
+		});
+});
+
+
 app.listen(52273,function() {
 	console.log('Server running');
 });
