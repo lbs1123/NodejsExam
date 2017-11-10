@@ -341,12 +341,15 @@ app.get('/account/:id',function(req,res){
 		});
 });
 app.put('/account/:bank_cd',function(req,res){
+	var now = new Date();
+	var jsonDate = now.toJSON();
+	var then     = new Date(jsonDate);
 	console.log("account put message");
 	console.log(req.params.bank_cd);
-	console.log(new Date());
+	console.log(then);
 	connection.query(
-		'update account set bub_cd=?,name=?,amt=?,kubun=? issue_date=? where bank_cd=? and bub_cd is null limit 1',
-		[ req.body.bub_cd, req.body.name, req.body.amt, req.body.kubun, new Date(), req.params.bank_cd ],
+		'update account set bub_cd=?,name=?,amt=?,kubun=?,issue_date=? where bank_cd=? and bub_cd is null limit 1',
+		[ req.body.bub_cd, req.body.name, req.body.amt, req.body.kubun, then, req.params.bank_cd ],
 		function(err, result) {
 			if (err) {
 				res.send(JSON.stringify(err));
